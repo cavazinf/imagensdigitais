@@ -1,0 +1,48 @@
+import tensorflow as tf
+import numpy as np
+import os
+from PIL import Image
+
+# Função para carregar as imagens e extrair suas características
+def extrair_caracteristicas_imagens(caminho_pasta):
+    imagens = []
+    for arquivo in os.listdir(caminho_pasta):
+        if arquivo.endswith(".jpg") or arquivo.endswith(".png"):
+            imagem = Image.open(os.path.join(caminho_pasta, arquivo))
+            imagem = imagem.resize((224, 224))  # Redimensiona a imagem para o tamanho esperado da rede VGG16
+            imagem = np.array(imagem) / 255.0  # Normaliza os valores dos pixels para o intervalo [0, 1]
+            imagens.append(imagem)
+    return np.array(imagens)
+
+# Caminho da pasta com as imagens dos produtos
+caminho_pasta_produtos = "caminho/da/pasta/com/as/imagens/dos/produtos"
+
+# Carregar as imagens dos produtos e extrair suas características
+imagens_produtos = extrair_caracteristicas_imagens(caminho_pasta_produtos)
+
+# Criar um modelo de exemplo (usando VGG16 como extrator de características)
+modelo = tf.keras.applications.VGG16(include_top=False, weights="imagenet", input_shape=(224, 224, 3))
+
+# Obter as características das imagens dos produtos usando o modelo
+caracteristicas_produtos = modelo.predict(imagens_produtos)
+
+# Agora você pode comparar as características das imagens dos produtos para realizar as recomendações com base na similaridade visual.
+
+# Exemplo de como encontrar produtos similares usando uma distância euclidiana:
+from sklearn.metrics.pairwise import euclidean_distances
+
+# Índice do produto de referência
+indice_produto_referencia = 0
+
+# Calcular as distâncias euclidianas entre as características do produto de referência e os outros produtos
+distancias = euclidean_distances(caracteristicas_produtos[indice_produto_referencia].reshape(1, -1), caracteristicas_produtos)
+
+# Ordenar os produtos de acordo com a similaridade (distâncias crescentes)
+indices_recomendados = np.argsort(distancias[0])
+
+# Exibir os 5 produtos mais similares (excluindo o próprio produto de referência)
+for i in range(1, 6):
+    indice_produto_similar = indices_recomendados[i]
+    print(f"Produto {i}: {os.listdir(caminho_pasta_produtos)[indice_produto_similar]}")
+
+# Lembre-se de que esse é apenas um exemplo básico. Você pode utilizar técnicas mais avançadas e modelos mais complexos para obter recomendações mais precisas.
